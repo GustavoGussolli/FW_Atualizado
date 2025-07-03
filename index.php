@@ -1,39 +1,63 @@
+<?php
+$servidor = $_POST['servidor'] ?? '';
+$usuario = $_POST['usuario'] ?? '';
+$senha = $_POST['senha'] ?? '';
+$bancos = [];
+$erro = "";
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conectar'])) {
+    try {
+        $conn = new PDO("mysql:host=$servidor", $usuario, $senha);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $stmt = $conn->query("SHOW DATABASES");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $bancos[] = $row['Database'];
+        }
+    } catch (PDOException $e) {
+        $erro = "Erro ao conectar: " . $e->getMessage();
+    }
+}
+?>
+
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Formulário de Conexão</title>
+    <title>Conectar ao Banco</title>
     <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
-<div class="container">
+    <form method="post">
+        <div class="container">
+            <h2>Informações de Conexão</h2>
 
-<form action="creator.php" method="POST">
-    <?php
+            <?php if ($erro): ?>
+                <div class="mensagem_erro"><?= $erro ?></div>
+            <?php endif; ?>
 
-    include 'mensagens.php';
-    if (isset($_GET['msg']) ){
-        $msg=$_GET['msg'];
-        $classe=$msg==2?'mensagem':'mensagem_erro';
-        echo "<div class=\"$classe\">" . ($mensagens[$msg] ?? "Erro desconhecido") . "</div>";
-    }
-    ?>
-    <h1>EasyMVC</h1><h2>Configuração</h2>
+            <label for="servidor">Servidor:</label>
+            <input type="text" id="servidor" name="servidor" value="<?= htmlspecialchars($servidor) ?>" required>
 
-    <label for="servidor">Servidor:</label>
-    <input type="text" id="servidor" name="servidor" required>
+            <label for="usuario">Usuário:</label>
+            <input type="text" id="usuario" name="usuario" value="<?= htmlspecialchars($usuario) ?>" required>
 
-    <label for="banco">Banco de Dados:</label>
-    <input type="text" id="banco" name="banco" required>
+            <label for="senha">Senha:</label>
+            <input type="password" id="senha" name="senha" value="<?= htmlspecialchars($senha) ?>">
 
-    <label for="usuario">Usuário:</label>
-    <input type="text" id="usuario" name="usuario" required>
-
-    <label for="senha">Senha:</label>
-    <input type="password" id="senha" name="senha">
-
-    <button type="submit">Enviar</button>
-</form>
-</div>
+            <?php if (!empty($bancos)): ?>
+                <label for="banco">Escolha o Banco de Dados:</label>
+                <select name="banco" id="banco" required>
+                    <option value="" disabled selected>Selecione uma base</option>
+                    <?php foreach ($bancos as $banco): ?>
+                        <option value="<?= htmlspecialchars($banco) ?>"><?= htmlspecialchars($banco) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <br>
+                <button type="submit" formaction="creator.php">Avançar</button>
+            <?php else: ?>
+                <button type="submit" name="conectar">Conectar</button>
+            <?php endif; ?>
+        </div>
+    </form>
 </body>
 </html>
